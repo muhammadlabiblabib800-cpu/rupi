@@ -1,0 +1,1760 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Keuangan Labib</title>
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            appBg: 'var(--color-bg)',
+            appCard: 'var(--color-card)',
+            appTextPrimary: 'var(--color-text-primary)',
+            appTextSecondary: 'var(--color-text-secondary)',
+            appTextMuted: 'var(--color-text-muted)',
+            appBorder: 'var(--color-border)',
+            appAccent: '#B8F264',
+            appAccentHover: '#a3e645',
+            appIncome: '#16a34a',
+            appIncomeBg: 'var(--color-income-bg)',
+            appExpense: '#dc2626',
+            appExpenseBg: 'var(--color-expense-bg)',
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          boxShadow: {
+            appCard: '0 4px 20px rgba(0,0,0,0.03)',
+            appCardHover: '0 8px 30px rgba(0,0,0,0.06)',
+            floating: '0 10px 30px rgba(0,0,0,0.08)',
+          },
+          borderRadius: {
+            'card': '24px',
+            'button': '16px',
+            'pill': '9999px',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --color-bg: #F7F7F5;
+      --color-card: #FFFFFF;
+      --color-text-primary: #111111;
+      --color-text-secondary: #777777;
+      --color-text-muted: #A0A0A0;
+      --color-border: #EEEEEE;
+      --color-income-bg: #f0fdf4;
+      --color-expense-bg: #fef2f2;
+    }
+    .dark {
+      --color-bg: #0F172A;
+      --color-card: #1E293B;
+      --color-text-primary: #F8FAFC;
+      --color-text-secondary: #94A3B8;
+      --color-text-muted: #64748B;
+      --color-border: #334155;
+      --color-income-bg: #064e3b;
+      --color-expense-bg: #7f1d1d;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #E5E7EB; border-radius: 9999px; }
+    .dark ::-webkit-scrollbar-thumb { background: #334155; }
+
+    .view-panel { transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out; }
+    .view-panel.hidden-panel { display: none; opacity: 0; transform: translateY(8px); }
+    .view-panel.active-panel { display: block; opacity: 1; transform: translateY(0); }
+
+    .chart-mode-btn { color: var(--color-text-secondary); background: transparent; }
+    .chart-mode-btn.active {
+      background: #0F5132;
+      color: #FFFFFF;
+      box-shadow: 0 2px 8px rgba(15, 81, 50, 0.28);
+    }
+
+    /* ===== CANDLESTICK ===== */
+    .candle-col { touch-action: manipulation; }
+    .candle-body { transition: transform .18s ease, filter .18s ease; }
+    .candle-col:hover .candle-body { filter: brightness(1.08); }
+    .candle-col:active .candle-body { transform: translateX(-50%) scaleY(0.97); }
+
+    .chart-tooltip {
+      background: #111111;
+      border-radius: 16px;
+      padding: 12px 14px;
+      min-width: 180px;
+      box-shadow: 0 16px 40px -8px rgba(0, 0, 0, 0.45);
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+    .dark .chart-tooltip {
+      background: #050505;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+    }
+
+    /* File input agar rapi */
+    input[type="file"]::file-selector-button {
+      background: #B8F264;
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      padding: 6px 12px;
+      font-weight: 600;
+      font-size: 11px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+    input[type="file"]::file-selector-button:hover { background: #a3e645; }
+  </style>
+</head>
+<body class="bg-appBg text-appTextPrimary font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-appAccent selection:text-appTextPrimary transition-colors duration-200">
+
+  <div class="w-full max-w-[1300px] mx-auto min-h-screen flex flex-col md:flex-row relative">
+
+    <aside class="hidden md:flex flex-col w-64 lg:w-72 p-6 border-r border-appBorder sticky top-0 h-screen justify-between bg-appBg z-20">
+      <div>
+        <div class="flex items-center gap-3 px-3 py-2 mb-8">
+          <div class="w-10 h-10 rounded-2xl bg-appAccent flex items-center justify-center font-bold text-lg text-black shadow-sm">L</div>
+          <div>
+            <h1 class="font-bold text-lg tracking-tight leading-none text-appTextPrimary">Labib</h1>
+            <span class="text-xs text-appTextSecondary">Keuangan Pribadi</span>
+          </div>
+        </div>
+
+        <nav class="space-y-2">
+          <button onclick="switchTab('home')" id="nav-desktop-home" class="nav-desktop-btn active w-full flex items-center gap-3 px-4 py-3.5 rounded-button text-sm font-semibold transition-all bg-appAccent text-black">
+            <i data-lucide="layout-grid" class="w-5 h-5"></i> Beranda
+          </button>
+          <button onclick="switchTab('transactions')" id="nav-desktop-transactions" class="nav-desktop-btn w-full flex items-center gap-3 px-4 py-3.5 rounded-button text-sm font-medium text-appTextSecondary hover:text-appTextPrimary hover:bg-appCard transition-all">
+            <i data-lucide="arrow-left-right" class="w-5 h-5"></i> Transaksi
+          </button>
+          <button onclick="switchTab('assets')" id="nav-desktop-assets" class="nav-desktop-btn w-full flex items-center gap-3 px-4 py-3.5 rounded-button text-sm font-medium text-appTextSecondary hover:text-appTextPrimary hover:bg-appCard transition-all">
+            <i data-lucide="wallet" class="w-5 h-5"></i> Aset Saya
+          </button>
+          <button onclick="switchTab('statistics')" id="nav-desktop-statistics" class="nav-desktop-btn w-full flex items-center gap-3 px-4 py-3.5 rounded-button text-sm font-medium text-appTextSecondary hover:text-appTextPrimary hover:bg-appCard transition-all">
+            <i data-lucide="pie-chart" class="w-5 h-5"></i> Statistik
+          </button>
+          <button onclick="switchTab('profile')" id="nav-desktop-profile" class="nav-desktop-btn w-full flex items-center gap-3 px-4 py-3.5 rounded-button text-sm font-medium text-appTextSecondary hover:text-appTextPrimary hover:bg-appCard transition-all">
+            <i data-lucide="user" class="w-5 h-5"></i> Profil Saya
+          </button>
+        </nav>
+      </div>
+
+      <div class="bg-appCard p-5 rounded-card shadow-appCard border border-appBorder">
+        <div class="w-8 h-8 rounded-xl bg-appBg flex items-center justify-center mb-3">
+          <i data-lucide="sparkles" class="w-4 h-4 text-appTextPrimary"></i>
+        </div>
+        <h4 class="text-sm font-semibold mb-1 text-appTextPrimary">Aksi Cepat</h4>
+        <p class="text-xs text-appTextSecondary mb-4">Catat transaksi keuangan Anda.</p>
+        <button onclick="openTxModal()" class="w-full bg-appAccent hover:bg-appAccentHover text-black font-semibold text-xs py-3 px-4 rounded-button transition-all shadow-sm flex items-center justify-center gap-2">
+          <i data-lucide="plus" class="w-4 h-4"></i> Tambah Catatan
+        </button>
+      </div>
+    </aside>
+
+    <main class="flex-1 min-w-0 pb-28 md:pb-12 pt-4 md:pt-8 px-4 sm:px-6 lg:px-8 max-w-5xl">
+
+      <header class="flex items-center justify-between mb-6 md:mb-8">
+        <div class="flex items-center gap-3 cursor-pointer group" onclick="switchTab('profile')">
+          <img id="user-avatar-header" src="..." alt="Foto Profil" class="w-11 h-11 rounded-full object-cover border-2 border-appAccent shadow-sm group-hover:scale-105 transition-transform" />
+          <div>
+            <span class="text-xs font-medium text-appTextSecondary block">Selamat datang kembali,</span>
+            <h2 id="header-user-name" class="text-xl md:text-2xl font-bold tracking-tight text-appTextPrimary group-hover:text-appAccent transition-colors">Labib</h2>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="switchTab('profile')" class="w-10 h-10 rounded-full bg-appCard border border-appBorder flex items-center justify-center text-appTextPrimary shadow-appCard hover:border-appAccent transition-colors">
+            <i data-lucide="user" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- ================= BERANDA ================= -->
+      <section id="view-home" class="view-panel active-panel space-y-6">
+        <div class="bg-appCard p-6 sm:p-8 rounded-card border border-appBorder shadow-appCard relative overflow-hidden">
+          <div class="absolute -top-12 -right-12 w-48 h-48 bg-appAccent/20 rounded-full blur-2xl pointer-events-none"></div>
+
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-medium uppercase tracking-wider text-appTextSecondary">Total Saldo Bersih</span>
+            <span class="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-pill bg-appIncomeBg text-appIncome">
+              <i data-lucide="trending-up" class="w-3 h-3"></i> Aset Aktif
+            </span>
+          </div>
+
+          <div class="mb-6">
+            <h1 id="hero-total-balance" class="text-3xl sm:text-4xl font-extrabold tracking-tight text-appTextPrimary">Rp 0</h1>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 pt-5 border-t border-appBorder">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-appIncomeBg text-appIncome flex items-center justify-center shrink-0">
+                <i data-lucide="arrow-down-left" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <span class="text-xs text-appTextSecondary block">Pemasukan</span>
+                <span id="hero-total-income" class="text-sm sm:text-base font-bold text-appTextPrimary">+ Rp 0</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-appExpenseBg text-appExpense flex items-center justify-center shrink-0">
+                <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <span class="text-xs text-appTextSecondary block">Pengeluaran</span>
+                <span id="hero-total-expense" class="text-sm sm:text-base font-bold text-appTextPrimary">- Rp 0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-4 gap-3">
+          <button onclick="openTxModal('Pengeluaran')" class="bg-appCard p-3.5 sm:p-4 rounded-card border border-appBorder shadow-appCard hover:border-appAccent transition-all flex flex-col items-center justify-center gap-2 group">
+            <div class="w-10 h-10 rounded-full bg-appBg text-appTextPrimary flex items-center justify-center group-hover:bg-appAccent group-hover:text-black transition-colors">
+              <i data-lucide="minus" class="w-5 h-5"></i>
+            </div>
+            <span class="text-xs font-semibold text-appTextPrimary">Keluar</span>
+          </button>
+
+          <button onclick="openTxModal('Pemasukan')" class="bg-appCard p-3.5 sm:p-4 rounded-card border border-appBorder shadow-appCard hover:border-appAccent transition-all flex flex-col items-center justify-center gap-2 group">
+            <div class="w-10 h-10 rounded-full bg-appBg text-appTextPrimary flex items-center justify-center group-hover:bg-appAccent group-hover:text-black transition-colors">
+              <i data-lucide="plus" class="w-5 h-5"></i>
+            </div>
+            <span class="text-xs font-semibold text-appTextPrimary">Masuk</span>
+          </button>
+
+          <button onclick="openTransferModal()" class="bg-appCard p-3.5 sm:p-4 rounded-card border border-appBorder shadow-appCard hover:border-appAccent transition-all flex flex-col items-center justify-center gap-2 group">
+            <div class="w-10 h-10 rounded-full bg-appBg text-appTextPrimary flex items-center justify-center group-hover:bg-appAccent group-hover:text-black transition-colors">
+              <i data-lucide="arrow-left-right" class="w-5 h-5"></i>
+            </div>
+            <span class="text-xs font-semibold text-appTextPrimary">Transfer</span>
+          </button>
+
+          <button onclick="switchTab('assets')" class="bg-appCard p-3.5 sm:p-4 rounded-card border border-appBorder shadow-appCard hover:border-appAccent transition-all flex flex-col items-center justify-center gap-2 group">
+            <div class="w-10 h-10 rounded-full bg-appBg text-appTextPrimary flex items-center justify-center group-hover:bg-appAccent group-hover:text-black transition-colors">
+              <i data-lucide="layers" class="w-5 h-5"></i>
+            </div>
+            <span class="text-xs font-semibold text-appTextPrimary">Aset</span>
+          </button>
+        </div>
+
+        <!-- ===== CANDLESTICK PEMASUKAN (HOME) ===== -->
+        <div class="bg-appCard p-5 sm:p-6 rounded-card border border-appBorder shadow-appCard">
+          <div class="flex items-start justify-between gap-4 mb-7">
+            <div class="min-w-0">
+              <span class="text-xs font-medium uppercase tracking-wider text-appTextSecondary">Candlestick Pemasukan</span>
+              <h3 id="income-chart-total" class="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1 truncate text-appTextPrimary">Rp 0</h3>
+              <span id="income-chart-period" class="text-[11px] text-appTextMuted mt-0.5 block">7 hari terakhir</span>
+            </div>
+
+            <div class="flex items-center gap-1 p-1 bg-appBg rounded-pill border border-appBorder shrink-0">
+              <button onclick="setCandleMode('income','daily')" id="income-mode-daily" class="chart-mode-btn px-3 sm:px-4 py-1.5 rounded-pill text-[11px] font-bold transition-all active">Daily</button>
+              <button onclick="setCandleMode('income','monthly')" id="income-mode-monthly" class="chart-mode-btn px-3 sm:px-4 py-1.5 rounded-pill text-[11px] font-bold transition-all">Monthly</button>
+            </div>
+          </div>
+
+          <div class="flex gap-1.5 sm:gap-3">
+            <div id="income-y-axis" class="relative w-10 sm:w-12 shrink-0 h-44 sm:h-56"></div>
+            <div id="income-canvas" class="relative flex-1 h-44 sm:h-56">
+              <div id="income-grid" class="absolute inset-0 pointer-events-none"></div>
+              <div id="income-candles" class="absolute inset-0 flex items-stretch justify-between gap-1.5 sm:gap-3"></div>
+              <div id="income-tooltip" class="chart-tooltip hidden absolute z-30 pointer-events-none opacity-0"></div>
+            </div>
+          </div>
+
+          <div class="flex gap-1.5 sm:gap-3 mt-3">
+            <div class="w-10 sm:w-12 shrink-0"></div>
+            <div id="income-x-axis" class="flex-1 flex justify-between gap-1.5 sm:gap-3"></div>
+          </div>
+
+          <div class="flex items-center flex-wrap gap-4 mt-5 pt-4 border-t border-appBorder">
+            <div class="flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-sm bg-[#16A34A]"></span>
+              <span class="text-[10px] font-semibold text-appTextSecondary">Pemasukan Naik</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-sm" style="background: var(--color-text-muted)"></span>
+              <span class="text-[10px] font-semibold text-appTextSecondary">Tanpa Pemasukan</span>
+            </div>
+            <span class="text-[10px] text-appTextMuted ml-auto hidden sm:block">Ketuk candle untuk detail</span>
+          </div>
+        </div>
+
+        <!-- ===== RATA-RATA PEMASUKAN 30 HARI ===== -->
+        <div class="bg-appCard p-5 sm:p-6 rounded-card border border-appBorder shadow-appCard">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-bold text-sm text-appTextPrimary">Rata-Rata Pemasukan 30 Hari</h3>
+              <p class="text-[11px] text-appTextSecondary">Dihitung dari 30 hari terakhir</p>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-appIncomeBg text-appIncome flex items-center justify-center shrink-0">
+              <i data-lucide="trending-up" class="w-4 h-4"></i>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2.5 sm:gap-3">
+            <div class="bg-appBg p-3.5 rounded-2xl border border-appBorder">
+              <span class="text-[10px] font-semibold text-appTextSecondary block mb-1">Rata-Rata / Hari</span>
+              <h4 id="avg30-daily" class="text-sm sm:text-base font-extrabold text-appIncome truncate">Rp 0</h4>
+            </div>
+            <div class="bg-appBg p-3.5 rounded-2xl border border-appBorder">
+              <span class="text-[10px] font-semibold text-appTextSecondary block mb-1">Total 30 Hari</span>
+              <h4 id="avg30-total" class="text-sm sm:text-base font-extrabold text-appTextPrimary truncate">Rp 0</h4>
+            </div>
+            <div class="bg-appBg p-3.5 rounded-2xl border border-appBorder">
+              <span class="text-[10px] font-semibold text-appTextSecondary block mb-1">Hari Aktif</span>
+              <h4 id="avg30-days" class="text-sm sm:text-base font-extrabold text-appTextPrimary truncate">0 / 30</h4>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TRANSAKSI ================= -->
+      <section id="view-transactions" class="view-panel hidden-panel space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-bold tracking-tight text-appTextPrimary">Riwayat Transaksi</h2>
+            <p class="text-xs text-appTextSecondary">Pantau dan kelola seluruh arus kas Anda</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="openTransferModal()" class="bg-appCard border border-appBorder hover:bg-appBg text-appTextPrimary font-semibold text-xs py-2.5 px-4 rounded-button transition-colors flex items-center gap-2">
+              <i data-lucide="arrow-left-right" class="w-4 h-4"></i> Transfer Aset
+            </button>
+            <button onclick="openTxModal()" class="inline-flex items-center justify-center gap-2 bg-appAccent hover:bg-appAccentHover text-black font-semibold text-xs py-2.5 px-4 rounded-button transition-all shadow-sm">
+              <i data-lucide="plus" class="w-4 h-4"></i> Tambah Transaksi
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 overflow-x-auto pb-2">
+          <button onclick="filterTransactions('semua')" id="filter-semua" class="tx-filter-btn active-filter px-4 py-2 rounded-pill text-xs font-semibold whitespace-nowrap transition-all bg-appTextPrimary text-appBg shadow-sm">Semua</button>
+          <button onclick="filterTransactions('Pemasukan')" id="filter-pemasukan" class="tx-filter-btn px-4 py-2 rounded-pill text-xs font-semibold whitespace-nowrap transition-all bg-appCard text-appTextSecondary hover:text-appTextPrimary border border-appBorder">Pemasukan</button>
+          <button onclick="filterTransactions('Pengeluaran')" id="filter-pengeluaran" class="tx-filter-btn px-4 py-2 rounded-pill text-xs font-semibold whitespace-nowrap transition-all bg-appCard text-appTextSecondary hover:text-appTextPrimary border border-appBorder">Pengeluaran</button>
+          <button onclick="filterTransactions('Transfer')" id="filter-transfer" class="tx-filter-btn px-4 py-2 rounded-pill text-xs font-semibold whitespace-nowrap transition-all bg-appCard text-appTextSecondary hover:text-appTextPrimary border border-appBorder">Transfer</button>
+        </div>
+
+        <div id="full-tx-list" class="space-y-3"></div>
+
+        <div id="tx-empty-state" class="hidden bg-appCard p-10 rounded-card border border-appBorder text-center my-6">
+          <div class="w-12 h-12 rounded-full bg-appBg text-appTextMuted flex items-center justify-center mx-auto mb-3">
+            <i data-lucide="receipt" class="w-6 h-6"></i>
+          </div>
+          <h4 class="font-bold text-sm text-appTextPrimary mb-1">Belum Ada Transaksi</h4>
+          <p class="text-xs text-appTextSecondary mb-4 max-w-xs mx-auto">Mulai catat transaksi pertama Anda untuk memantau arus keuangan.</p>
+          <button onclick="openTxModal()" class="inline-flex items-center gap-2 bg-appAccent text-black font-semibold text-xs py-2.5 px-4 rounded-button">
+            <i data-lucide="plus" class="w-4 h-4"></i> Tambah Transaksi
+          </button>
+        </div>
+      </section>
+
+      <!-- ================= ASET ================= -->
+      <section id="view-assets" class="view-panel hidden-panel space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-bold tracking-tight text-appTextPrimary">Portofolio Aset</h2>
+            <p class="text-xs text-appTextSecondary">Kelola dan atur alokasi aset keuangan Anda</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="openTransferModal()" class="bg-appCard border border-appBorder hover:bg-appBg text-appTextPrimary font-semibold text-xs py-2.5 px-4 rounded-button transition-colors flex items-center gap-2">
+              <i data-lucide="arrow-left-right" class="w-4 h-4"></i> Transfer
+            </button>
+            <button onclick="openAssetModal()" class="bg-appAccent hover:bg-appAccentHover text-black font-semibold text-xs py-2.5 px-4 rounded-button transition-colors flex items-center gap-2 shadow-sm">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i> Tambah Aset
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-appCard p-6 rounded-card border border-appBorder shadow-appCard">
+          <span class="text-xs font-medium text-appTextSecondary uppercase tracking-wider">Total Nilai Aset Bersih</span>
+          <h3 id="assets-total-val" class="text-3xl font-extrabold tracking-tight text-appTextPrimary mt-1">Rp 0</h3>
+        </div>
+
+        <div id="assets-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </section>
+
+      <!-- ================= STATISTIK ================= -->
+      <section id="view-statistics" class="view-panel hidden-panel space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-2xl font-bold tracking-tight text-appTextPrimary">Laporan & Cashflow</h2>
+            <p class="text-xs text-appTextSecondary">Analisis catatan arus kas dan statistik keuangan Anda</p>
+          </div>
+        </div>
+
+        <!-- ===== CANDLESTICK CASHFLOW (INFLOW vs OUTFLOW) ===== -->
+        <div class="bg-appCard p-5 sm:p-6 rounded-card border border-appBorder shadow-appCard">
+          <div class="flex items-start justify-between gap-4 mb-7">
+            <div class="min-w-0">
+              <span class="text-xs font-medium uppercase tracking-wider text-appTextSecondary">Candlestick Cashflow</span>
+              <h3 id="flow-chart-total" class="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1 truncate text-appTextPrimary">Rp 0</h3>
+              <span id="flow-chart-period" class="text-[11px] text-appTextMuted mt-0.5 block">7 hari terakhir</span>
+            </div>
+
+            <div class="flex items-center gap-1 p-1 bg-appBg rounded-pill border border-appBorder shrink-0">
+              <button onclick="setCandleMode('flow','daily')" id="flow-mode-daily" class="chart-mode-btn px-3 sm:px-4 py-1.5 rounded-pill text-[11px] font-bold transition-all active">Daily</button>
+              <button onclick="setCandleMode('flow','monthly')" id="flow-mode-monthly" class="chart-mode-btn px-3 sm:px-4 py-1.5 rounded-pill text-[11px] font-bold transition-all">Monthly</button>
+            </div>
+          </div>
+
+          <div class="flex gap-1.5 sm:gap-3">
+            <div id="flow-y-axis" class="relative w-10 sm:w-12 shrink-0 h-44 sm:h-56"></div>
+            <div id="flow-canvas" class="relative flex-1 h-44 sm:h-56">
+              <div id="flow-grid" class="absolute inset-0 pointer-events-none"></div>
+              <div id="flow-candles" class="absolute inset-0 flex items-stretch justify-between gap-1.5 sm:gap-3"></div>
+              <div id="flow-tooltip" class="chart-tooltip hidden absolute z-30 pointer-events-none opacity-0"></div>
+            </div>
+          </div>
+
+          <div class="flex gap-1.5 sm:gap-3 mt-3">
+            <div class="w-10 sm:w-12 shrink-0"></div>
+            <div id="flow-x-axis" class="flex-1 flex justify-between gap-1.5 sm:gap-3"></div>
+          </div>
+
+          <div class="flex items-center flex-wrap gap-4 mt-5 pt-4 border-t border-appBorder">
+            <div class="flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-sm bg-[#16A34A]"></span>
+              <span class="text-[10px] font-semibold text-appTextSecondary">Net Positif</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-sm bg-[#DC2626]"></span>
+              <span class="text-[10px] font-semibold text-appTextSecondary">Net Negatif</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-2.5 h-2.5 rounded-sm" style="background: var(--color-text-muted)"></span>
+              <span class="text-[10px] font-semibold text-appTextSecondary">Tanpa Aktivitas</span>
+            </div>
+            <span class="text-[10px] text-appTextMuted ml-auto hidden sm:block">Ketuk candle untuk detail</span>
+          </div>
+        </div>
+
+        <!-- BAGIAN FILTER WAKTU & 3 KARTU RINGKASAN TELAH DIHAPUS SESUAI PERMINTAAN -->
+
+        <div class="bg-appCard p-6 rounded-card border border-appBorder shadow-appCard">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-bold text-base text-appTextPrimary">Rata-Rata Pemasukan</h3>
+              <p class="text-xs text-appTextSecondary">Estimasi rata-rata dana masuk berdasarkan riwayat data Anda</p>
+            </div>
+            <div class="w-8 h-8 rounded-full bg-appIncomeBg text-appIncome flex items-center justify-center">
+              <i data-lucide="calculator" class="w-4 h-4"></i>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="bg-appBg p-4 rounded-2xl border border-appBorder">
+              <span class="text-xs font-semibold text-appTextSecondary block mb-1">Rata-Rata Harian</span>
+              <h4 id="avg-income-daily" class="text-lg font-bold text-appIncome">Rp 0</h4>
+              <span class="text-[10px] text-appTextMuted mt-0.5 block">per hari</span>
+            </div>
+            <div class="bg-appBg p-4 rounded-2xl border border-appBorder">
+              <span class="text-xs font-semibold text-appTextSecondary block mb-1">Rata-Rata Bulanan</span>
+              <h4 id="avg-income-monthly" class="text-lg font-bold text-appIncome">Rp 0</h4>
+              <span class="text-[10px] text-appTextMuted mt-0.5 block">per bulan</span>
+            </div>
+            <div class="bg-appBg p-4 rounded-2xl border border-appBorder">
+              <span class="text-xs font-semibold text-appTextSecondary block mb-1">Rata-Rata Tahunan</span>
+              <h4 id="avg-income-yearly" class="text-lg font-bold text-appIncome">Rp 0</h4>
+              <span class="text-[10px] text-appTextMuted mt-0.5 block">per tahun</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-appCard p-6 rounded-card border border-appBorder shadow-appCard">
+          <h3 class="font-bold text-base text-appTextPrimary mb-1">Pengeluaran Berdasarkan Kategori</h3>
+          <p class="text-xs text-appTextSecondary mb-6">Rincian alokasi biaya pada periode terpilih</p>
+          <div id="category-stats-list" class="space-y-4"></div>
+        </div>
+      </section>
+
+      <!-- ================= PROFIL ================= -->
+      <section id="view-profile" class="view-panel hidden-panel space-y-6">
+        <div>
+          <h2 class="text-2xl font-bold tracking-tight text-appTextPrimary">Profil & Pengaturan</h2>
+          <p class="text-xs text-appTextSecondary">Kelola akun, preferensi tampilan tema, dan data Anda</p>
+        </div>
+
+        <div class="bg-appCard p-6 rounded-card border border-appBorder shadow-appCard flex flex-col sm:flex-row items-center gap-5">
+          <img id="profile-page-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&h=200&q=80" alt="Avatar" class="w-20 h-20 rounded-full object-cover border-4 border-appAccent shadow-md" />
+          <div class="text-center sm:text-left flex-1">
+            <h3 id="profile-page-name" class="text-xl font-bold text-appTextPrimary">Labib</h3>
+            <p id="profile-page-email" class="text-xs text-appTextSecondary mb-3">labib@example.com</p>
+            <button onclick="openEditProfileModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-appBg border border-appBorder rounded-pill text-xs font-semibold text-appTextPrimary hover:bg-appAccent hover:text-black transition-colors">
+              <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Edit Profil
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-appCard p-6 rounded-card border border-appBorder shadow-appCard space-y-4">
+          <h3 class="font-bold text-base text-appTextPrimary">Tampilan & Tema</h3>
+          <div class="flex items-center justify-between p-4 bg-appBg rounded-button border border-appBorder">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-full bg-appCard flex items-center justify-center text-appTextPrimary">
+                <i data-lucide="moon" class="w-5 h-5 hidden dark:block"></i>
+                <i data-lucide="sun" class="w-5 h-5 block dark:hidden"></i>
+              </div>
+              <div>
+                <span class="text-sm font-semibold text-appTextPrimary block">Mode Gelap (Dark Mode)</span>
+                <span class="text-xs text-appTextSecondary">Atur tampilan ke tema terang atau gelap</span>
+              </div>
+            </div>
+            <button onclick="toggleDarkMode()" class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out bg-gray-300 dark:bg-appAccent focus:outline-none">
+              <span id="theme-toggle-dot" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out translate-x-0 dark:translate-x-5"></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-appCard p-6 rounded-card border border-appBorder shadow-appCard space-y-4">
+          <h3 class="font-bold text-base text-appTextPrimary">Pengaturan Data</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button onclick="resetAllData()" class="w-full p-4 flex items-center justify-between bg-red-50 dark:bg-red-950/30 hover:bg-red-100 rounded-button text-left transition-colors border border-red-200 dark:border-red-900">
+              <div class="flex items-center gap-3">
+                <i data-lucide="rotate-ccw" class="w-5 h-5 text-red-600 dark:text-red-400"></i>
+                <div>
+                  <span class="text-sm font-semibold text-red-600 dark:text-red-400 block">Reset Semua Data</span>
+                  <span class="text-xs text-red-400 dark:text-red-500">Setel ulang saldo & transaksi ke 0</span>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-red-400"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-appCard/90 backdrop-blur-md border-t border-appBorder px-4 py-2 z-30 flex items-center justify-around shadow-floating">
+      <button onclick="switchTab('home')" id="nav-mobile-home" class="nav-mobile-btn active flex flex-col items-center gap-1 p-2 text-appTextPrimary">
+        <i data-lucide="layout-grid" class="w-5 h-5"></i>
+        <span class="text-[10px] font-semibold">Beranda</span>
+      </button>
+      <button onclick="switchTab('transactions')" id="nav-mobile-transactions" class="nav-mobile-btn flex flex-col items-center gap-1 p-2 text-appTextMuted hover:text-appTextPrimary">
+        <i data-lucide="arrow-left-right" class="w-5 h-5"></i>
+        <span class="text-[10px] font-medium">Transaksi</span>
+      </button>
+      <button onclick="openTxModal()" class="w-12 h-12 rounded-full bg-appAccent text-black flex items-center justify-center shadow-lg -mt-5 hover:scale-105 active:scale-95 transition-transform">
+        <i data-lucide="plus" class="w-6 h-6"></i>
+      </button>
+      <button onclick="switchTab('assets')" id="nav-mobile-assets" class="nav-mobile-btn flex flex-col items-center gap-1 p-2 text-appTextMuted hover:text-appTextPrimary">
+        <i data-lucide="wallet" class="w-5 h-5"></i>
+        <span class="text-[10px] font-medium">Aset</span>
+      </button>
+      <button onclick="switchTab('statistics')" id="nav-mobile-statistics" class="nav-mobile-btn flex flex-col items-center gap-1 p-2 text-appTextMuted hover:text-appTextPrimary">
+        <i data-lucide="pie-chart" class="w-5 h-5"></i>
+        <span class="text-[10px] font-medium">Statistik</span>
+      </button>
+    </nav>
+
+  </div>
+
+  <!-- MODAL 1: ADD TRANSAKSI -->
+  <div id="tx-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+    <div class="bg-appCard w-full sm:max-w-md rounded-t-card sm:rounded-card p-6 border border-appBorder shadow-floating transform translate-y-8 transition-transform duration-200">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="font-bold text-lg text-appTextPrimary">Tambah Transaksi</h3>
+        <button onclick="closeModal('tx-modal')" class="w-8 h-8 rounded-full bg-appBg flex items-center justify-center text-appTextSecondary hover:text-appTextPrimary transition-colors">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 p-1 bg-appBg rounded-button mb-5">
+        <button type="button" onclick="setModalType('Pengeluaran')" id="btn-type-pengeluaran" class="py-2 text-xs font-bold rounded-xl transition-all bg-appCard text-appTextPrimary shadow-sm">Pengeluaran</button>
+        <button type="button" onclick="setModalType('Pemasukan')" id="btn-type-pemasukan" class="py-2 text-xs font-bold rounded-xl transition-all text-appTextSecondary">Pemasukan</button>
+      </div>
+
+      <form id="tx-form" onsubmit="handleAddTransaction(event)" class="space-y-4">
+        <div>
+          <label class="text-xs font-medium text-appTextSecondary block mb-1">Pilih Aset</label>
+          <select id="input-tx-asset" class="w-full bg-appBg border border-appBorder rounded-button py-3 px-4 text-sm text-appTextPrimary focus:outline-none focus:border-appTextPrimary transition-colors"></select>
+        </div>
+
+        <div>
+          <label class="text-xs font-medium text-appTextSecondary block mb-1">Jumlah (Rp)</label>
+          <div class="relative flex items-center">
+            <span class="absolute left-4 font-bold text-lg text-appTextMuted">Rp</span>
+            <input type="number" id="input-tx-amount" required placeholder="0" min="1" class="w-full bg-appBg border border-appBorder rounded-button py-3.5 pl-12 pr-4 font-extrabold text-xl text-appTextPrimary focus:outline-none focus:border-appTextPrimary transition-colors" />
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-medium text-appTextSecondary block mb-1">Judul / Deskripsi</label>
+          <input type="text" id="input-tx-title" required placeholder="Cth: Belanja Mingguan" class="w-full bg-appBg border border-appBorder rounded-button py-3 px-4 text-sm text-appTextPrimary focus:outline-none focus:border-appTextPrimary transition-colors" />
+        </div>
+
+        <div>
+          <label class="text-xs font-medium text-appTextSecondary block mb-1">Kategori</label>
+          <select id="input-tx-category" class="w-full bg-appBg border border-appBorder rounded-button py-3 px-4 text-sm text-appTextPrimary focus:outline-none focus:border-appTextPrimary transition-colors">
+            <option value="Makanan & Minuman">Makanan & Minuman</option>
+            <option value="Gaji & Penghasilan">Gaji & Penghasilan</option>
+            <option value="Belanja">Belanja</option>
+            <option value="Tagihan & Listrik">Tagihan & Listrik</option>
+            <option value="Transportasi">Transportasi</option>
+            <option value="Lainnya">Lainnya</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-xs font-medium text-appTextSecondary block mb-1">Tanggal</label>
+          <input type="date" id="input-tx-date" required class="w-full bg-appBg border border-appBorder rounded-button py-3 px-4 text-sm text-appTextPrimary focus:outline-none focus:border-appTextPrimary transition-colors" />
+        </div>
+
+        <button type="submit" class="w-full bg-appAccent hover:bg-appAccentHover text-black font-bold text-sm py-3.5 px-4 rounded-button transition-all shadow-sm mt-2">Simpan Transaksi</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: TRANSFER -->
+  <div id="transfer-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+    <div class="bg-appCard w-full sm:max-w-md rounded-t-card sm:rounded-card p-6 border border-appBorder shadow-floating transform translate-y-8 transition-transform duration-200">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="font-bold text-lg text-appTextPrimary">Transfer Antar Aset</h3>
+        <button onclick="closeModal('transfer-modal')" class="w-8 h-8 rounded-full bg-appBg flex items-center justify-center text-appTextSecondary hover:text-appTextPrimary transition-colors">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="transfer-form" onsubmit="handleTransfer(event)" class="space-y-4">
+        <div>
+          <label class="text-xs font-medium text-appTextSecondary block mb-1">Aset Asal</label>
+          <select id="transfer-from-asset" class="w-full bg-appBg border border-appBorder rounded-button py-3 px-4 text-sm text-appTextPrimary focus:outline-none focus:border-appTextPrimary transition-colors"></select>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-appTextSecondary block mb-1">Aset Tujuan</label>
+          <select id="transfer-to-asset" class="w-full bg-appBg border border-appBorder rounded-button py-3 px-4 text-sm text-appTextPrimary focus:outline-none focus:border-appTextPrimary transition-colors"></select>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-appTextSecondary block mb-1">Nominal Transfer (Rp)</label>
+          <div class="relative flex items-center">
+            <span class="absolute left-4 font-bold text-lg text-appTextMuted">Rp</span>
+            <input type="number" id="transfer-amount" required placeholder="0" min="1" class="w-full bg-appBg border border-appBorder rounded-button py-3.5 pl-12 pr-4 font-extrabold text-xl text-appTextPrimary focus:outline-none focus:border-appTextPrimary transition-colors" />
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-appTextSecondary block mb-1">Catatan (Opsional)</label>
+          <input type="text" id="transfer-note" placeholder="Cth: Pindah dana tabungan" class="w-full bg-appBg border border-appBorder rounded-button py-3 px-4 text-sm text-appTextPrimary focus:outline-none focus:border-appTextPrimary transition-colors" />
+        </div>
+        <button type="submit" class="w-full bg-appAccent hover:bg-appAccentHover text-black font-bold text-sm py-3.5 px-4 rounded-button transition-all shadow-sm mt-2">Kirim Transfer</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: ASSET -->
+  <div id="asset-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+    <div class="bg-appCard w-full sm:max-w-md rounded-t-card sm:rounded-card p-6 border border-appBorder shadow-floating transform translate-y-8 transition-transform duration-200 max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-5">
+        <h3 id="asset-modal-title" class="font-bold text-lg text-appTextPrimary">Kelola Aset</h3>
+        <button onclick="closeModal('asset-modal')" class="w-8 h-8 rounded-full bg-appBg flex items-center justify-center text-appTextSecondary hover:text-appTextPrimary transition-colors">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="asset-form" onsubmit="handleSaveAsset(event)" class="space-y-4">
+        <input type="hidden" id="asset-id" value="" />
+
+        <div>
+          <label class="text-xs font-medium text-appTextSecondary block mb-2">Logo Aset (Upload dari Galeri)</label>
+          <div class="flex items-center gap-3">
+            <div id="asset-logo-preview" class="w-16 h-16 rounded-2xl bg-appBg border border-appBorder flex items-center justify-center overflow-hidden shrink-0">
+              <i data-lucide="image" class="w-6 h-6 text-appTextMuted"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <input type="file" id="asset-logo-input" accept="image/*" onchange="previewAssetLogo(event)" class="w-full bg-appBg border border-appBorder rounded-button py-2 px-2 text-[11px] text-appTextPrimary" />
+              <button type="button" onclick="removeAssetLogo()" id="asset-logo-remove" class="hidden mt-2 text-[11px] text-red-500 hover:underline font-semibold">Hapus logo</button>
+            </div>
+          </div>
+          <p class="text-[10px] text-appTextMuted mt-1.5">Format gambar (JPG/PNG). Otomatis dikompres 256px.</p>
+        </div>
+
+        <div>
+          <label class="text-xs font-medium text-appTextSecondary block mb-1">Nama Aset</label>
+          <input type="text" id="asset-name" required placeholder="Cth: Bank BCA / Reksa Dana" class="w-full bg-appBg border border-appBorder rounded-button py-3 px-4 text-sm text-appTextPrimary focus:outline-none focus:border-appTextPrimary transition-colors" />
+        </div>
+        <div>
+          <label class="text-xs font-medium text-appTextSecondary block mb-1">Saldo Awal (Rp)</label>
+          <div class="relative flex items-center">
+            <span class="absolute left-4 font-bold text-lg text-appTextMuted">Rp</span>
+            <input type="number" id="asset-balance" required placeholder="0" class="w-full bg-appBg border border-appBorder rounded-button py-3.5 pl-12 pr-4 font-extrabold text-xl text-appTextPrimary focus:outline-none focus:border-appTextPrimary transition-colors" />
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-appTextSecondary block mb-1">Ikon Default (jika tidak ada logo)</label>
+          <select id="asset-icon" class="w-full bg-appBg border border-appBorder rounded-button py-3 px-4 text-sm text-appTextPrimary focus:outline-none focus:border-appTextPrimary transition-colors">
+            <option value="building-2">Bank / Institusi</option>
+            <option value="wallet">Dompet / Tunai</option>
+            <option value="coins">Emas / Koin</option>
+            <option value="pie-chart">Investasi / Saham</option>
+            <option value="credit-card">Kartu Kredit / E-Wallet</option>
+          </select>
+        </div>
+        <button type="submit" class="w-full bg-appAccent hover:bg-appAccentHover text-black font-bold text-sm py-3.5 px-4 rounded-button transition-all shadow-sm mt-2">Simpan Aset</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 4: PROFILE -->
+  <div id="profile-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+    <div class="bg-appCard w-full sm:max-w-md rounded-t-card sm:rounded-card p-6 border border-appBorder shadow-floating transform translate-y-8 transition-transform duration-200">
+      <div class="flex items-center justify-between mb-5">
+        <h3 class="font-bold text-lg text-appTextPrimary">Edit Profil</h3>
+        <button onclick="closeModal('profile-modal')" class="w-8 h-8 rounded-full bg-appBg flex items-center justify-center text-appTextSecondary hover:text-appTextPrimary transition-colors">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="profile-form" onsubmit="handleSaveProfile(event)" class="space-y-4">
+        <div>
+          <label class="text-xs font-medium text-appTextSecondary block mb-1">Unggah Foto Profil (Galeri)</label>
+          <input type="file" id="input-profile-file" accept="image/*" onchange="previewImage(event)" class="w-full bg-appBg border border-appBorder rounded-button py-2 px-3 text-xs text-appTextPrimary" />
+        </div>
+        <div>
+          <label class="text-xs font-medium text-appTextSecondary block mb-1">Nama Pengguna</label>
+          <input type="text" id="input-profile-name" required placeholder="Nama Anda" class="w-full bg-appBg border border-appBorder rounded-button py-3 px-4 text-sm text-appTextPrimary focus:outline-none focus:border-appTextPrimary transition-colors" />
+        </div>
+        <div>
+          <label class="text-xs font-medium text-appTextSecondary block mb-1">Email</label>
+          <input type="email" id="input-profile-email" required placeholder="email@example.com" class="w-full bg-appBg border border-appBorder rounded-button py-3 px-4 text-sm text-appTextPrimary focus:outline-none focus:border-appTextPrimary transition-colors" />
+        </div>
+        <button type="submit" class="w-full bg-appAccent hover:bg-appAccentHover text-black font-bold text-sm py-3.5 px-4 rounded-button transition-all shadow-sm mt-2">Simpan Perubahan</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================
+       DATA DEFAULT
+       ========================================================== */
+    const defaultAssets = [
+      { id: 'ast-1', name: 'Rekening Bank (BCA)', balance: 0, icon: 'building-2', logo: '' },
+      { id: 'ast-2', name: 'Uang Tunai', balance: 0, icon: 'wallet', logo: '' },
+    ];
+
+    const defaultTransactions = [];
+
+    const defaultUserProfile = {
+      name: 'Labib',
+      email: 'labib@example.com',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&h=200&q=80'
+    };
+
+    let assets = JSON.parse(localStorage.getItem('lumina_assets')) || defaultAssets;
+    let transactions = JSON.parse(localStorage.getItem('lumina_tx')) || defaultTransactions;
+    let userProfile = JSON.parse(localStorage.getItem('lumina_profile')) || defaultUserProfile;
+    let isDarkMode = JSON.parse(localStorage.getItem('lumina_darkmode')) || false;
+
+    let currentModalType = 'Pengeluaran';
+    let currentFilter = 'semua';
+    let currentTimeframeMode = 'today';
+    let tempAvatar = '';
+    let tempAssetLogo = '';
+
+    /* ==========================================================
+       CHART STATE (CANDLESTICK)
+       ========================================================== */
+    const incomeChartState = { mode: 'daily', data: [], selected: null, bootstrapped: false };
+    const flowChartState   = { mode: 'daily', data: [], selected: null, bootstrapped: false };
+
+    const INCOME_CHART_IDS = {
+      candles: 'income-candles', xAxis: 'income-x-axis', yAxis: 'income-y-axis',
+      grid: 'income-grid', tooltip: 'income-tooltip', canvas: 'income-canvas',
+      total: 'income-chart-total', period: 'income-chart-period'
+    };
+
+    const FLOW_CHART_IDS = {
+      candles: 'flow-candles', xAxis: 'flow-x-axis', yAxis: 'flow-y-axis',
+      grid: 'flow-grid', tooltip: 'flow-tooltip', canvas: 'flow-canvas',
+      total: 'flow-chart-total', period: 'flow-chart-period'
+    };
+
+    const MONTH_SHORT = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    const MONTH_LONG  = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+    /* ==========================================================
+       HELPERS
+       ========================================================== */
+    function getLocalDateStr(date = new Date()) {
+      const d = date;
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function saveData() {
+      try {
+        localStorage.setItem('lumina_assets', JSON.stringify(assets));
+        localStorage.setItem('lumina_tx', JSON.stringify(transactions));
+        localStorage.setItem('lumina_profile', JSON.stringify(userProfile));
+        localStorage.setItem('lumina_darkmode', JSON.stringify(isDarkMode));
+      } catch (err) {
+        alert('Gagal menyimpan data. Storage penuh (kemungkinan logo terlalu besar).');
+        console.error(err);
+      }
+    }
+
+    function formatRp(val) {
+      return 'Rp ' + Number(val || 0).toLocaleString('id-ID');
+    }
+
+    function fmtAxis(v) {
+      const abs = Math.abs(v);
+      const sign = v < 0 ? '-' : '';
+      const trim = (n) => {
+        const r = Math.round(n * 10) / 10;
+        return Number.isInteger(r) ? String(r) : r.toFixed(1).replace('.', ',');
+      };
+      if (abs >= 1e9) return sign + trim(abs / 1e9) + 'M';
+      if (abs >= 1e6) return sign + trim(abs / 1e6) + 'jt';
+      if (abs >= 1e3) return sign + trim(abs / 1e3) + 'rb';
+      return sign + String(Math.round(abs));
+    }
+
+    function getCandleState(kind) {
+      return kind === 'income' ? incomeChartState : flowChartState;
+    }
+    function getCandleIds(kind) {
+      return kind === 'income' ? INCOME_CHART_IDS : FLOW_CHART_IDS;
+    }
+
+    /* ==========================================================
+       INIT
+       ========================================================== */
+    function initApp() {
+      applyTheme();
+
+      const todayStr = getLocalDateStr();
+      const monthStr = todayStr.substring(0, 7);
+
+      const dateInput = document.getElementById('input-tx-date');
+      if (dateInput) dateInput.value = todayStr;
+
+      renderUserProfile();
+      renderCalculations();
+      renderAssets();
+      renderTransactions();
+      renderStatistics();
+      populateAssetDropdowns();
+      renderIncomeAverages();
+
+      drawCandleChart('income');
+      drawCandleChart('flow');
+
+      lucide.createIcons();
+    }
+
+    function applyTheme() {
+      if (isDarkMode) document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+    }
+
+    function toggleDarkMode() {
+      isDarkMode = !isDarkMode;
+      saveData();
+      applyTheme();
+      lucide.createIcons();
+    }
+
+    function renderUserProfile() {
+      document.getElementById('header-user-name').textContent = userProfile.name;
+      document.getElementById('user-avatar-header').src = userProfile.avatar;
+      document.getElementById('profile-page-name').textContent = userProfile.name;
+      document.getElementById('profile-page-email').textContent = userProfile.email;
+      document.getElementById('profile-page-avatar').src = userProfile.avatar;
+    }
+
+    function renderCalculations() {
+      let totalAssetBalance = assets.reduce((sum, a) => sum + a.balance, 0);
+      let income = 0;
+      let expense = 0;
+
+      transactions.forEach(t => {
+        if (t.type === 'Pemasukan') income += t.amount;
+        if (t.type === 'Pengeluaran') expense += t.amount;
+      });
+
+      document.getElementById('hero-total-balance').textContent = formatRp(totalAssetBalance);
+      document.getElementById('hero-total-income').textContent = '+ ' + formatRp(income);
+      document.getElementById('hero-total-expense').textContent = '- ' + formatRp(expense);
+      document.getElementById('assets-total-val').textContent = formatRp(totalAssetBalance);
+    }
+
+    /* ==========================================================
+       RATA-RATA PEMASUKAN 30 HARI (HOME)
+       ========================================================== */
+    function renderIncomeAverages() {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
+      const startKey = getLocalDateStr(start);
+      const endKey = getLocalDateStr(now);
+
+      const items = transactions.filter(t =>
+        t.type === 'Pemasukan' && t.date && t.date >= startKey && t.date <= endKey
+      );
+
+      const total = items.reduce((s, t) => s + t.amount, 0);
+      const activeDays = new Set(items.map(t => t.date)).size;
+      const avgDaily = total / 30;
+
+      const elDaily = document.getElementById('avg30-daily');
+      const elTotal = document.getElementById('avg30-total');
+      const elDays  = document.getElementById('avg30-days');
+
+      if (elDaily) elDaily.textContent = formatRp(Math.round(avgDaily));
+      if (elTotal) elTotal.textContent = formatRp(total);
+      if (elDays)  elDays.textContent = `${activeDays} / 30`;
+    }
+
+    /* ==========================================================
+       ASET
+       ========================================================== */
+    function renderAssets() {
+      const grid = document.getElementById('assets-grid');
+      let total = assets.reduce((sum, a) => sum + a.balance, 0);
+
+      if (assets.length === 0) {
+        grid.innerHTML = `<p class="text-xs text-appTextMuted col-span-2 text-center py-4">Belum ada aset ditambahkan.</p>`;
+        return;
+      }
+
+      grid.innerHTML = assets.map(ast => {
+        let pct = total > 0 ? ((ast.balance / total) * 100).toFixed(1) : 0;
+
+        const visual = ast.logo
+          ? `<img src="${ast.logo}" alt="${ast.name}" class="w-full h-full object-cover" />`
+          : `<i data-lucide="${ast.icon || 'wallet'}" class="w-5 h-5"></i>`;
+
+        return `
+          <div class="bg-appCard p-5 rounded-card border border-appBorder shadow-appCard flex items-center justify-between">
+            <div class="flex items-center gap-3.5 min-w-0">
+              <div class="w-11 h-11 rounded-2xl bg-appBg text-appTextPrimary flex items-center justify-center font-bold overflow-hidden shrink-0 border border-appBorder">
+                ${visual}
+              </div>
+              <div class="min-w-0">
+                <h4 class="font-bold text-sm text-appTextPrimary truncate">${ast.name}</h4>
+                <div class="flex items-center gap-2 mt-0.5">
+                  <button onclick="editAsset('${ast.id}')" class="text-[11px] text-blue-500 hover:underline">Edit</button>
+                  <span class="text-[10px] text-appTextMuted">•</span>
+                  <button onclick="deleteAsset('${ast.id}')" class="text-[11px] text-red-500 hover:underline">Hapus</button>
+                </div>
+              </div>
+            </div>
+            <div class="text-right shrink-0">
+              <span class="font-bold text-sm text-appTextPrimary block">${formatRp(ast.balance)}</span>
+              <span class="text-[11px] font-medium text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-pill">${pct}%</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    /* ==========================================================
+       TRANSAKSI
+       ========================================================== */
+    function renderTransactions() {
+      const fullContainer = document.getElementById('full-tx-list');
+      const emptyState = document.getElementById('tx-empty-state');
+
+      const filtered = transactions.filter(t => {
+        if (currentFilter === 'semua') return true;
+        return t.type.toLowerCase() === currentFilter.toLowerCase();
+      });
+
+      if (filtered.length === 0) {
+        emptyState.classList.remove('hidden');
+        fullContainer.innerHTML = '';
+      } else {
+        emptyState.classList.add('hidden');
+      }
+
+      const createTxHtml = (tx) => {
+        const isIncome = tx.type === 'Pemasukan';
+        const isTransfer = tx.type === 'Transfer';
+
+        let amountSign = isIncome ? '+' : '-';
+        let amountClass = isIncome ? 'text-appIncome' : 'text-appTextPrimary';
+        if (isTransfer) {
+          amountSign = '↔';
+          amountClass = 'text-blue-500';
+        }
+
+        const iconName = isIncome ? 'arrow-down-left' : (isTransfer ? 'arrow-left-right' : 'shopping-bag');
+
+        return `
+          <div class="bg-appCard p-4 rounded-card border border-appBorder shadow-appCard flex items-center justify-between gap-3 hover:border-gray-400 transition-all">
+            <div class="flex items-center gap-3.5 min-w-0 flex-1">
+              <div class="w-10 h-10 rounded-full bg-appBg text-appTextPrimary flex items-center justify-center shrink-0">
+                <i data-lucide="${iconName}" class="w-5 h-5"></i>
+              </div>
+              <div class="truncate">
+                <h4 class="font-bold text-sm text-appTextPrimary truncate">${tx.title}</h4>
+                <p class="text-xs text-appTextSecondary truncate">${tx.category}</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <div class="text-right">
+                <span class="font-bold text-sm ${amountClass} block">${amountSign} ${formatRp(tx.amount)}</span>
+                <span class="text-[11px] text-appTextMuted">${tx.date}</span>
+              </div>
+              <button onclick="deleteTransaction(${tx.id})" title="Hapus transaksi" class="w-8 h-8 rounded-full bg-appBg hover:bg-red-100 dark:hover:bg-red-950/50 flex items-center justify-center text-appTextMuted hover:text-red-500 transition-colors shrink-0">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      };
+
+      fullContainer.innerHTML = filtered.map(createTxHtml).join('');
+      lucide.createIcons();
+    }
+
+    function deleteTransaction(id) {
+      const tx = transactions.find(t => t.id === id);
+      if (!tx) return;
+
+      if (!confirm(`Hapus transaksi "${tx.title}"?\n\nSaldo aset akan otomatis disesuaikan kembali.`)) return;
+
+      if (tx.type === 'Pemasukan') {
+        const ast = assets.find(a => a.id === tx.assetId);
+        if (ast) ast.balance -= tx.amount;
+      } else if (tx.type === 'Pengeluaran') {
+        const ast = assets.find(a => a.id === tx.assetId);
+        if (ast) ast.balance += tx.amount;
+      } else if (tx.type === 'Transfer') {
+        if (tx.fromAssetId && tx.toAssetId) {
+          const fromAst = assets.find(a => a.id === tx.fromAssetId);
+          const toAst = assets.find(a => a.id === tx.toAssetId);
+          if (fromAst) fromAst.balance += tx.amount;
+          if (toAst) toAst.balance -= tx.amount;
+        } else {
+          alert('Transaksi transfer lama tidak dapat dikembalikan saldonya secara otomatis. Saldo aset tidak akan diubah.');
+        }
+      }
+
+      transactions = transactions.filter(t => t.id !== id);
+      saveData();
+      initApp();
+    }
+
+    /* ==========================================================
+       CANDLESTICK ENGINE
+       ========================================================== */
+    function buildCandleData(kind, mode) {
+      const now = new Date();
+      const isDaily = mode === 'daily';
+      const buckets = [];
+
+      if (isDaily) {
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+          const key = getLocalDateStr(d);
+          buckets.push({
+            label: String(d.getDate()),
+            title: `${d.getDate()} ${MONTH_LONG[d.getMonth()]} ${d.getFullYear()}`,
+            inBucket: (t) => (t.date || '') === key,
+            before: (t) => !!t.date && t.date < key
+          });
+        }
+      } else {
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          buckets.push({
+            label: MONTH_SHORT[d.getMonth()],
+            title: `${MONTH_LONG[d.getMonth()]} ${d.getFullYear()}`,
+            inBucket: (t) => (t.date || '').slice(0, 7) === key,
+            before: (t) => !!t.date && (t.date || '').slice(0, 7) < key
+          });
+        }
+      }
+
+      const rel = transactions.filter(t => {
+        if (!t.date) return false;
+        if (kind === 'income') return t.type === 'Pemasukan';
+        return t.type === 'Pemasukan' || t.type === 'Pengeluaran';
+      });
+
+      const deltaOf = (t) => {
+        if (kind === 'income') return t.amount;
+        return t.type === 'Pemasukan' ? t.amount : -t.amount;
+      };
+
+      let running = 0;
+      const firstBucket = buckets[0];
+      rel.forEach(t => { if (firstBucket.before(t)) running += deltaOf(t); });
+
+      return buckets.map(b => {
+        const items = rel
+          .filter(t => b.inBucket(t))
+          .sort((a, c) => (a.id || 0) - (c.id || 0));
+
+        const open = running;
+        let high = running;
+        let low = running;
+        let inflow = 0;
+        let outflow = 0;
+
+        items.forEach(t => {
+          running += deltaOf(t);
+          if (running > high) high = running;
+          if (running < low) low = running;
+          if (t.type === 'Pemasukan') inflow += t.amount;
+          else outflow += t.amount;
+        });
+
+        return {
+          label: b.label,
+          title: b.title,
+          open, close: running, high, low,
+          inflow, outflow,
+          net: inflow - outflow,
+          count: items.length
+        };
+      });
+    }
+
+    function drawCandleChart(kind) {
+      const state = getCandleState(kind);
+      const ids = getCandleIds(kind);
+
+      const candlesEl = document.getElementById(ids.candles);
+      if (!candlesEl) return;
+
+      const gridEl    = document.getElementById(ids.grid);
+      const yAxisEl   = document.getElementById(ids.yAxis);
+      const xAxisEl   = document.getElementById(ids.xAxis);
+      const totalEl   = document.getElementById(ids.total);
+      const periodEl  = document.getElementById(ids.period);
+
+      state.data = buildCandleData(kind, state.mode);
+      const data = state.data;
+
+      if (!state.bootstrapped) {
+        for (let i = data.length - 1; i >= 0; i--) {
+          if (data[i].count > 0) { state.selected = i; break; }
+        }
+        if (data.some(d => d.count > 0)) state.bootstrapped = true;
+      }
+
+      const totalIn = data.reduce((s, d) => s + d.inflow, 0);
+      const totalOut = data.reduce((s, d) => s + d.outflow, 0);
+      const net = totalIn - totalOut;
+
+      if (totalEl) {
+        if (kind === 'income') {
+          totalEl.textContent = formatRp(totalIn);
+          totalEl.className = 'text-2xl sm:text-3xl font-extrabold tracking-tight mt-1 truncate text-appTextPrimary';
+        } else {
+          totalEl.textContent = (net < 0 ? '- ' : '') + formatRp(Math.abs(net));
+          totalEl.className = 'text-2xl sm:text-3xl font-extrabold tracking-tight mt-1 truncate ' +
+            (net < 0 ? 'text-appExpense' : 'text-appTextPrimary');
+        }
+      }
+      if (periodEl) periodEl.textContent = state.mode === 'daily' ? '7 hari terakhir' : '7 bulan terakhir';
+
+      let lo = Math.min(...data.map(d => d.low));
+      let hi = Math.max(...data.map(d => d.high));
+      if (!isFinite(lo) || !isFinite(hi)) { lo = 0; hi = 100; }
+      if (lo === hi) {
+        const bump = Math.max(Math.abs(lo) * 0.1, 1000);
+        lo -= bump; hi += bump;
+      }
+      const pad = (hi - lo) * 0.12;
+      lo -= pad; hi += pad;
+      const range = (hi - lo) || 1;
+      const toPct = v => ((v - lo) / range) * 100;
+
+      gridEl.innerHTML = [0, 1, 2, 3, 4].map(i =>
+        `<div class="absolute left-0 right-0 border-t border-appBorder" style="bottom:${i * 25}%"></div>`
+      ).join('');
+
+      yAxisEl.innerHTML = [0, 1, 2, 3, 4].map(i => {
+        const v = lo + (range * i) / 4;
+        return `<span class="absolute right-0 text-[10px] font-medium text-appTextMuted leading-none whitespace-nowrap"
+                      style="bottom:${i * 25}%;transform:translateY(50%);">${fmtAxis(v)}</span>`;
+      }).join('');
+
+      candlesEl.innerHTML = data.map((d, i) => {
+        const isActive = state.selected === i;
+        const flat = Math.abs(d.close - d.open) < 0.5;
+        const up = d.close > d.open;
+        const color = flat ? 'var(--color-text-muted)' : (up ? '#16A34A' : '#DC2626');
+
+        const wickBottom = toPct(d.low);
+        const wickHeight = Math.max(toPct(d.high) - toPct(d.low), 0.8);
+
+        const bodyBottom = Math.min(toPct(d.open), toPct(d.close));
+        const bodyHeight = Math.max(Math.abs(toPct(d.close) - toPct(d.open)), flat ? 0.8 : 1.4);
+
+        return `
+          <div class="candle-col relative flex-1 h-full cursor-pointer group" onclick="selectCandle('${kind}', ${i})">
+            <div class="absolute -inset-x-1 top-0 bottom-0 rounded-xl transition-colors ${isActive ? 'bg-appAccent/15' : 'group-hover:bg-appBg'}"></div>
+            <div class="absolute left-1/2 -translate-x-1/2 w-[2px] rounded-full"
+                 style="bottom:${wickBottom}%;height:${wickHeight}%;background:${color};opacity:.85;"></div>
+            <div class="candle-body absolute left-1/2 -translate-x-1/2 w-[62%] max-w-[26px] rounded-[4px]"
+                 style="bottom:${bodyBottom}%;height:${bodyHeight}%;background:${color};"></div>
+          </div>
+        `;
+      }).join('');
+
+      xAxisEl.innerHTML = data.map((d, i) =>
+        `<span class="flex-1 text-center text-[10px] font-bold transition-colors ${i === state.selected ? 'text-appTextPrimary' : 'text-appTextMuted'}">${d.label}</span>`
+      ).join('');
+
+      updateCandleModeButtons(kind);
+      requestAnimationFrame(() => renderCandleTooltip(kind));
+      lucide.createIcons();
+    }
+
+    function renderCandleTooltip(kind) {
+      const state = getCandleState(kind);
+      const ids = getCandleIds(kind);
+
+      const tooltipEl = document.getElementById(ids.tooltip);
+      const canvasEl  = document.getElementById(ids.canvas);
+      if (!tooltipEl || !canvasEl) return;
+
+      if (canvasEl.getBoundingClientRect().width === 0) return;
+
+      const d = (state.selected !== null) ? state.data[state.selected] : null;
+      if (!d) {
+        tooltipEl.classList.add('hidden', 'opacity-0');
+        return;
+      }
+
+      const rows = kind === 'income'
+        ? `
+          <div class="flex items-center justify-between gap-6 text-[11px] mb-1.5">
+            <span class="text-white/55">Pemasukan</span>
+            <span class="font-bold text-appAccent">${formatRp(d.inflow)}</span>
+          </div>
+          <div class="flex items-center justify-between gap-6 text-[11px] mb-1.5">
+            <span class="text-white/55">Jumlah Trx</span>
+            <span class="font-semibold text-white/80">${d.count}x</span>
+          </div>
+          <div class="flex items-center justify-between gap-6 text-[11px]">
+            <span class="text-white/55">Kumulatif</span>
+            <span class="font-bold text-white">${formatRp(d.close)}</span>
+          </div>`
+        : `
+          <div class="flex items-center justify-between gap-6 text-[11px] mb-1.5">
+            <span class="text-white/55">Inflow</span>
+            <span class="font-bold text-appAccent">${formatRp(d.inflow)}</span>
+          </div>
+          <div class="flex items-center justify-between gap-6 text-[11px] mb-1.5">
+            <span class="text-white/55">Outflow</span>
+            <span class="font-bold text-rose-400">${formatRp(d.outflow)}</span>
+          </div>
+          <div class="flex items-center justify-between gap-6 text-[11px] mb-1.5">
+            <span class="text-white/55">Net</span>
+            <span class="font-bold ${d.net < 0 ? 'text-rose-400' : 'text-appAccent'}">${d.net < 0 ? '-' : '+'}${formatRp(Math.abs(d.net))}</span>
+          </div>
+          <div class="flex items-center justify-between gap-6 text-[11px]">
+            <span class="text-white/55">Kumulatif</span>
+            <span class="font-bold text-white">${formatRp(d.close)}</span>
+          </div>`;
+
+      tooltipEl.innerHTML = `
+        <div class="text-[10px] font-medium text-white/45 mb-2 whitespace-nowrap">${d.title}</div>
+        ${rows}
+      `;
+
+      tooltipEl.classList.remove('hidden');
+
+      const col = document.querySelectorAll(`#${ids.candles} .candle-col`)[state.selected];
+      if (!col) { tooltipEl.classList.add('opacity-0'); return; }
+
+      const body = col.querySelector('.candle-body');
+      const canvasRect = canvasEl.getBoundingClientRect();
+      const colRect = col.getBoundingClientRect();
+      const bodyRect = body ? body.getBoundingClientRect() : colRect;
+
+      const tw = tooltipEl.offsetWidth;
+      const th = tooltipEl.offsetHeight;
+
+      let left = (colRect.left - canvasRect.left) + (colRect.width / 2) - (tw / 2);
+      left = Math.max(2, Math.min(left, canvasRect.width - tw - 2));
+      tooltipEl.style.left = left + 'px';
+
+      let bottom = (canvasRect.bottom - bodyRect.top) + 12;
+      if (bottom + th > canvasRect.height) bottom = canvasRect.height - th - 4;
+      bottom = Math.max(4, bottom);
+      tooltipEl.style.bottom = bottom + 'px';
+
+      requestAnimationFrame(() => tooltipEl.classList.remove('opacity-0'));
+    }
+
+    function selectCandle(kind, index) {
+      const state = getCandleState(kind);
+      state.selected = (state.selected === index) ? null : index;
+      drawCandleChart(kind);
+    }
+
+    function setCandleMode(kind, mode) {
+      const state = getCandleState(kind);
+      if (state.mode === mode) return;
+      state.mode = mode;
+      state.selected = null;
+      drawCandleChart(kind);
+    }
+
+    function updateCandleModeButtons(kind) {
+      const state = getCandleState(kind);
+      const prefix = kind === 'income' ? 'income-mode' : 'flow-mode';
+      const daily = document.getElementById(`${prefix}-daily`);
+      const monthly = document.getElementById(`${prefix}-monthly`);
+      if (daily) daily.classList.toggle('active', state.mode === 'daily');
+      if (monthly) monthly.classList.toggle('active', state.mode === 'monthly');
+    }
+
+    let chartResizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(chartResizeTimer);
+      chartResizeTimer = setTimeout(() => {
+        renderCandleTooltip('income');
+        renderCandleTooltip('flow');
+      }, 120);
+    });
+
+    /* ==========================================================
+       STATISTIK (filter periode dihapus, hanya render kategori & avg)
+       ========================================================== */
+    function renderStatistics() {
+      // Karena filter periode sudah dihapus, kita gunakan default mode 'today'
+      // atau kita bisa merender semua data. Di sini kita set ke 'today' agar aman.
+      const todayStr = getLocalDateStr();
+      
+      let filteredTx = transactions.filter(t => {
+        // Default ke 'today' karena filter UI sudah tidak ada
+        return t.date === todayStr;
+      });
+
+      let income = 0;
+      let expense = 0;
+      let catMap = {};
+
+      filteredTx.forEach(t => {
+        if (t.type === 'Pemasukan') income += t.amount;
+        if (t.type === 'Pengeluaran') {
+          expense += t.amount;
+          catMap[t.category] = (catMap[t.category] || 0) + t.amount;
+        }
+      });
+
+      // Null check untuk elemen yang sudah dihapus
+      const statIncomeEl = document.getElementById('stat-income');
+      const statExpenseEl = document.getElementById('stat-expense');
+      const statNetEl = document.getElementById('stat-net');
+
+      if (statIncomeEl) statIncomeEl.textContent = '+ ' + formatRp(income);
+      if (statExpenseEl) statExpenseEl.textContent = '- ' + formatRp(expense);
+      if (statNetEl) {
+        let netCashflow = income - expense;
+        statNetEl.textContent = (netCashflow >= 0 ? '+ ' : '') + formatRp(netCashflow);
+      }
+
+      calculateAverageIncomes();
+
+      const statsContainer = document.getElementById('category-stats-list');
+      if (!statsContainer) return;
+
+      if (expense === 0) {
+        statsContainer.innerHTML = `<p class="text-xs text-appTextMuted text-center py-4">Tidak ada data pengeluaran pada periode ini.</p>`;
+        return;
+      }
+
+      statsContainer.innerHTML = Object.keys(catMap).map(cat => {
+        let amt = catMap[cat];
+        let pct = ((amt / expense) * 100).toFixed(0);
+        return `
+          <div>
+            <div class="flex justify-between items-center text-xs mb-1.5">
+              <span class="font-semibold text-appTextPrimary">${cat}</span>
+              <span class="font-bold text-appTextPrimary">${formatRp(amt)} <span class="text-appTextMuted font-normal">(${pct}%)</span></span>
+            </div>
+            <div class="w-full h-2 bg-appBg rounded-pill overflow-hidden">
+              <div class="h-full bg-appAccent rounded-pill" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function calculateAverageIncomes() {
+      const incomeTx = transactions.filter(t => t.type === 'Pemasukan');
+
+      const avgDailyEl = document.getElementById('avg-income-daily');
+      const avgMonthlyEl = document.getElementById('avg-income-monthly');
+      const avgYearlyEl = document.getElementById('avg-income-yearly');
+
+      if (incomeTx.length === 0) {
+        if (avgDailyEl) avgDailyEl.textContent = 'Rp 0';
+        if (avgMonthlyEl) avgMonthlyEl.textContent = 'Rp 0';
+        if (avgYearlyEl) avgYearlyEl.textContent = 'Rp 0';
+        return;
+      }
+
+      const totalIncome = incomeTx.reduce((sum, t) => sum + t.amount, 0);
+
+      const dates = incomeTx.map(t => new Date(t.date).getTime());
+      const minDate = new Date(Math.min(...dates));
+      const maxDate = new Date();
+
+      const diffTime = Math.abs(maxDate - minDate);
+      const totalDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+      const totalMonths = Math.max(1, totalDays / 30);
+      const totalYears = Math.max(1, totalDays / 365);
+
+      if (avgDailyEl) avgDailyEl.textContent = formatRp(Math.round(totalIncome / totalDays));
+      if (avgMonthlyEl) avgMonthlyEl.textContent = formatRp(Math.round(totalIncome / totalMonths));
+      if (avgYearlyEl) avgYearlyEl.textContent = formatRp(Math.round(totalIncome / totalYears));
+    }
+
+    /* ==========================================================
+       FORM / MODAL
+       ========================================================== */
+    function populateAssetDropdowns() {
+      const opts = assets.map(a => `<option value="${a.id}">${a.name} (${formatRp(a.balance)})</option>`).join('');
+      document.getElementById('input-tx-asset').innerHTML = opts;
+      document.getElementById('transfer-from-asset').innerHTML = opts;
+      document.getElementById('transfer-to-asset').innerHTML = opts;
+    }
+
+    function handleAddTransaction(e) {
+      e.preventDefault();
+      const assetId = document.getElementById('input-tx-asset').value;
+      const amount = parseFloat(document.getElementById('input-tx-amount').value);
+      const title = document.getElementById('input-tx-title').value;
+      const category = document.getElementById('input-tx-category').value;
+      const date = document.getElementById('input-tx-date').value;
+
+      const targetAsset = assets.find(a => a.id === assetId);
+      if (!targetAsset) return;
+
+      if (currentModalType === 'Pengeluaran' && targetAsset.balance < amount) {
+        alert('Saldo aset tidak mencukupi!');
+        return;
+      }
+
+      if (currentModalType === 'Pengeluaran') targetAsset.balance -= amount;
+      if (currentModalType === 'Pemasukan') targetAsset.balance += amount;
+
+      transactions.unshift({
+        id: Date.now(),
+        title,
+        category,
+        type: currentModalType,
+        amount,
+        date,
+        assetId
+      });
+
+      saveData();
+      initApp();
+      closeModal('tx-modal');
+    }
+
+    function handleTransfer(e) {
+      e.preventDefault();
+      const fromId = document.getElementById('transfer-from-asset').value;
+      const toId = document.getElementById('transfer-to-asset').value;
+      const amount = parseFloat(document.getElementById('transfer-amount').value);
+      const note = document.getElementById('transfer-note').value || 'Transfer Antar Aset';
+
+      if (fromId === toId) {
+        alert('Aset asal dan tujuan tidak boleh sama!');
+        return;
+      }
+
+      const fromAsset = assets.find(a => a.id === fromId);
+      const toAsset = assets.find(a => a.id === toId);
+
+      if (fromAsset.balance < amount) {
+        alert('Saldo aset asal tidak mencukupi!');
+        return;
+      }
+
+      fromAsset.balance -= amount;
+      toAsset.balance += amount;
+
+      transactions.unshift({
+        id: Date.now(),
+        title: `Transfer: ${fromAsset.name} ➔ ${toAsset.name}`,
+        category: note,
+        type: 'Transfer',
+        amount,
+        date: getLocalDateStr(),
+        fromAssetId: fromId,
+        toAssetId: toId
+      });
+
+      saveData();
+      initApp();
+      closeModal('transfer-modal');
+    }
+
+    function renderAssetLogoPreview() {
+      const preview = document.getElementById('asset-logo-preview');
+      const removeBtn = document.getElementById('asset-logo-remove');
+      if (!preview) return;
+
+      if (tempAssetLogo) {
+        preview.innerHTML = `<img src="${tempAssetLogo}" class="w-full h-full object-cover" alt="Logo Aset" />`;
+        if (removeBtn) removeBtn.classList.remove('hidden');
+      } else {
+        preview.innerHTML = `<i data-lucide="image" class="w-6 h-6 text-appTextMuted"></i>`;
+        if (removeBtn) removeBtn.classList.add('hidden');
+        lucide.createIcons();
+      }
+    }
+
+    function previewAssetLogo(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        alert('File harus berupa gambar (JPG/PNG).');
+        event.target.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const maxSize = 256;
+          let w = img.width;
+          let h = img.height;
+          if (w > h) {
+            if (w > maxSize) { h = Math.round(h * maxSize / w); w = maxSize; }
+          } else {
+            if (h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.clearRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+          tempAssetLogo = canvas.toDataURL('image/png');
+          renderAssetLogoPreview();
+        };
+        img.onerror = function() { alert('Gagal membaca gambar.'); };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeAssetLogo() {
+      tempAssetLogo = '';
+      const input = document.getElementById('asset-logo-input');
+      if (input) input.value = '';
+      renderAssetLogoPreview();
+    }
+
+    function openAssetModal() {
+      document.getElementById('asset-id').value = '';
+      document.getElementById('asset-name').value = '';
+      document.getElementById('asset-balance').value = '';
+      document.getElementById('asset-logo-input').value = '';
+      tempAssetLogo = '';
+      renderAssetLogoPreview();
+      document.getElementById('asset-modal-title').textContent = 'Tambah Aset';
+      openModal('asset-modal');
+    }
+
+    function editAsset(id) {
+      const ast = assets.find(a => a.id === id);
+      if (!ast) return;
+      document.getElementById('asset-id').value = ast.id;
+      document.getElementById('asset-name').value = ast.name;
+      document.getElementById('asset-balance').value = ast.balance;
+      document.getElementById('asset-icon').value = ast.icon || 'wallet';
+      document.getElementById('asset-logo-input').value = '';
+      tempAssetLogo = ast.logo || '';
+      renderAssetLogoPreview();
+      document.getElementById('asset-modal-title').textContent = 'Edit Aset';
+      openModal('asset-modal');
+    }
+
+    function handleSaveAsset(e) {
+      e.preventDefault();
+      const id = document.getElementById('asset-id').value;
+      const name = document.getElementById('asset-name').value;
+      const balance = parseFloat(document.getElementById('asset-balance').value);
+      const icon = document.getElementById('asset-icon').value;
+      const logo = tempAssetLogo || '';
+
+      if (id) {
+        const ast = assets.find(a => a.id === id);
+        if (ast) {
+          ast.name = name;
+          ast.balance = balance;
+          ast.icon = icon;
+          ast.logo = logo;
+        }
+      } else {
+        assets.push({ id: 'ast-' + Date.now(), name, balance, icon, logo });
+      }
+
+      saveData();
+      initApp();
+      closeModal('asset-modal');
+    }
+
+    function deleteAsset(id) {
+      if (confirm('Apakah Anda yakin ingin menghapus aset ini?')) {
+        assets = assets.filter(a => a.id !== id);
+        saveData();
+        initApp();
+      }
+    }
+
+    function previewImage(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) { tempAvatar = e.target.result; }
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function handleSaveProfile(e) {
+      e.preventDefault();
+      userProfile.name = document.getElementById('input-profile-name').value;
+      userProfile.email = document.getElementById('input-profile-email').value;
+      if (tempAvatar) userProfile.avatar = tempAvatar;
+
+      saveData();
+      renderUserProfile();
+      closeModal('profile-modal');
+    }
+
+    function resetAllData() {
+      if (confirm('Apakah Anda YAKIN ingin meriset semua data? Semua transaksi akan dihapus dan semua saldo aset menjadi Rp 0.')) {
+        transactions = [];
+        assets.forEach(a => a.balance = 0);
+
+        incomeChartState.selected = null;
+        incomeChartState.bootstrapped = false;
+        flowChartState.selected = null;
+        flowChartState.bootstrapped = false;
+
+        saveData();
+        initApp();
+        alert('Semua data transaksi dan saldo aset berhasil diriset menjadi Nol.');
+      }
+    }
+
+    /* ==========================================================
+       NAVIGATION
+       ========================================================== */
+    function switchTab(tabId) {
+      document.querySelectorAll('.view-panel').forEach(panel => {
+        panel.classList.remove('active-panel');
+        panel.classList.add('hidden-panel');
+      });
+
+      const target = document.getElementById(`view-${tabId}`);
+      if (target) {
+        target.classList.remove('hidden-panel');
+        target.classList.add('active-panel');
+      }
+
+      document.querySelectorAll('.nav-desktop-btn').forEach(btn => {
+        btn.classList.remove('bg-appAccent', 'text-black', 'font-semibold');
+        btn.classList.add('text-appTextSecondary', 'font-medium');
+      });
+      const activeDesktopBtn = document.getElementById(`nav-desktop-${tabId}`);
+      if (activeDesktopBtn) {
+        activeDesktopBtn.classList.remove('font-medium');
+        activeDesktopBtn.classList.add('bg-appAccent', 'text-black', 'font-semibold');
+      }
+
+      document.querySelectorAll('.nav-mobile-btn').forEach(btn => {
+        btn.classList.remove('text-appTextPrimary');
+        btn.classList.add('text-appTextMuted');
+      });
+      const activeMobileBtn = document.getElementById(`nav-mobile-${tabId}`);
+      if (activeMobileBtn) {
+        activeMobileBtn.classList.add('text-appTextPrimary');
+      }
+
+      if (tabId === 'home') requestAnimationFrame(() => renderCandleTooltip('income'));
+      if (tabId === 'statistics') requestAnimationFrame(() => renderCandleTooltip('flow'));
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function filterTransactions(type) {
+      currentFilter = type;
+      document.querySelectorAll('.tx-filter-btn').forEach(btn => {
+        btn.classList.remove('bg-appTextPrimary', 'text-appBg');
+        btn.classList.add('bg-appCard', 'text-appTextSecondary');
+      });
+
+      const activeBtn = document.getElementById(`filter-${type.toLowerCase()}`);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-appTextPrimary', 'text-appBg');
+      }
+
+      renderTransactions();
+    }
+
+    function openTxModal(defaultType = 'Pengeluaran') {
+      setModalType(defaultType);
+      openModal('tx-modal');
+    }
+
+    function openTransferModal() { openModal('transfer-modal'); }
+
+    function openEditProfileModal() {
+      document.getElementById('input-profile-name').value = userProfile.name;
+      document.getElementById('input-profile-email').value = userProfile.email;
+      tempAvatar = '';
+      openModal('profile-modal');
+    }
+
+    function openModal(id) {
+      const modal = document.getElementById(id);
+      modal.classList.remove('opacity-0', 'pointer-events-none');
+      modal.firstElementChild.classList.remove('translate-y-8');
+    }
+
+    function closeModal(id) {
+      const modal = document.getElementById(id);
+      modal.classList.add('opacity-0', 'pointer-events-none');
+      modal.firstElementChild.classList.add('translate-y-8');
+    }
+
+    function setModalType(type) {
+      currentModalType = type;
+      const btnExp = document.getElementById('btn-type-pengeluaran');
+      const btnInc = document.getElementById('btn-type-pemasukan');
+
+      if (type === 'Pengeluaran') {
+        btnExp.className = 'py-2 text-xs font-bold rounded-xl transition-all bg-appCard text-appTextPrimary shadow-sm';
+        btnInc.className = 'py-2 text-xs font-bold rounded-xl transition-all text-appTextSecondary';
+      } else {
+        btnInc.className = 'py-2 text-xs font-bold rounded-xl transition-all bg-appCard text-appTextPrimary shadow-sm';
+        btnExp.className = 'py-2 text-xs font-bold rounded-xl transition-all text-appTextSecondary';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
