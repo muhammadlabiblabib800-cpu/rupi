@@ -1754,6 +1754,27 @@
       }
     }
 
+      <!-- TOMBOL DOWNLOAD DATA LAMA -->
+  <button id="btn-download-json" style="position:fixed; bottom:20px; right:20px; z-index:9999; background:#dc2626; color:white; padding:15px 25px; border-radius:50px; font-weight:bold; box-shadow:0 4px 12px rgba(0,0,0,0.3); border:2px solid white;">📥 Download Data (JSON)</button>
+  
+  <script>
+    document.getElementById('btn-download-json').addEventListener('click', function() {
+        const dataLama = {
+            assets: localStorage.getItem('lumina_assets'),
+            tx: localStorage.getItem('lumina_tx'),
+            profile: localStorage.getItem('lumina_profile')
+        };
+        
+        const blob = new Blob([JSON.stringify(dataLama)], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "data_keuangan_lama.json";
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+  </script>
+
     document.addEventListener('DOMContentLoaded', initApp);
   </script>
 </body>
